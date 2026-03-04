@@ -16,6 +16,7 @@ import { formatDate } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { MemberActions } from "./member-actions";
 import { AddMemberDialog } from "./add-member-dialog";
+import { requireBrandPermission } from "@/lib/auth-utils";
 
 export default async function MembersPage({
   params,
@@ -32,6 +33,7 @@ export default async function MembersPage({
     .limit(1);
 
   if (!brand) notFound();
+  await requireBrandPermission(brand.id, "member:view");
 
   const memberList = await db
     .select({

@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
 import { CategoryActions } from "./category-actions";
+import { requireBrandPermission } from "@/lib/auth-utils";
 
 export default async function CategoriesPage({
   params,
@@ -28,6 +29,7 @@ export default async function CategoriesPage({
     .limit(1);
 
   if (!brand) notFound();
+  await requireBrandPermission(brand.id, ["kb:read", "category:manage"]);
 
   const categoryList = await db
     .select({

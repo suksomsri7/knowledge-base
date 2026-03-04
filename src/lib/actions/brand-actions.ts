@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { slugify } from "@/lib/utils";
 import { DEFAULT_ROLES } from "@/lib/permissions";
+import { logAudit } from "@/lib/actions/audit-actions";
 
 const brandSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -44,6 +45,8 @@ export async function createBrand(formData: FormData) {
     });
   }
 
+  await logAudit({ userId: session.user.id, brandId: brand.id, action: "create", resourceType: "brand", resourceId: brand.id, details: { name: parsed.name } });
+
   revalidatePath("/admin/brands");
   return brand;
 }
@@ -66,6 +69,8 @@ export async function updateBrand(brandId: string, formData: FormData) {
     })
     .where(eq(brands.id, brandId));
 
+  await logAudit({ userId: session.user.id, brandId, action: "update", resourceType: "brand", resourceId: brandId, details: { name: parsed.name } });
+
   revalidatePath("/admin/brands");
 }
 
@@ -78,6 +83,8 @@ export async function toggleBrandActive(brandId: string, isActive: boolean) {
     .set({ isActive, updatedAt: new Date() })
     .where(eq(brands.id, brandId));
 
+  await logAudit({ userId: session.user.id, brandId, action: "toggle_active", resourceType: "brand", resourceId: brandId, details: { isActive } });
+
   revalidatePath("/admin/brands");
 }
 
@@ -86,6 +93,9 @@ export async function deleteBrand(brandId: string) {
   if (!session?.user?.isSuperAdmin) throw new Error("Unauthorized");
 
   await db.delete(brands).where(eq(brands.id, brandId));
+
+  await logAudit({ userId: session.user.id, brandId, action: "delete", resourceType: "brand", resourceId: brandId });
+
   revalidatePath("/admin/brands");
 }
 
@@ -105,6 +115,8 @@ export async function addMemberToBrand(
       set: { roleId, isActive: true },
     });
 
+  await logAudit({ userId: session.user.id, brandId, action: "add_member", resourceType: "brand_member", details: { targetUserId: userId, roleId } });
+
   revalidatePath("/admin/brands");
   revalidatePath("/brands");
 }
@@ -121,6 +133,8 @@ export async function removeMemberFromBrand(brandId: string, userId: string) {
         eq(brandMembers.userId, userId)
       )
     );
+
+  await logAudit({ userId: session.user.id, brandId, action: "remove_member", resourceType: "brand_member", details: { targetUserId: userId } });
 
   revalidatePath("/admin/brands");
   revalidatePath("/brands");

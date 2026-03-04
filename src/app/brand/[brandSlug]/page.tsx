@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { FileText, FolderOpen, Users, Eye } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { requireBrandPermission } from "@/lib/auth-utils";
 
 export default async function BrandDashboard({
   params,
@@ -28,6 +29,7 @@ export default async function BrandDashboard({
     .limit(1);
 
   if (!brand) notFound();
+  await requireBrandPermission(brand.id, "kb:read");
 
   const [totalArticles] = await db
     .select({ value: count() })

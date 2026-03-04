@@ -7,6 +7,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { slugify } from "@/lib/utils";
+import { logAudit } from "@/lib/actions/audit-actions";
 
 const articleSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),
@@ -65,6 +66,8 @@ export async function createArticle(brandId: string, formData: FormData) {
     where: eq(articles.brandId, brandId),
     columns: { slug: true },
   });
+
+  await logAudit({ userId: session.user.id, brandId, action: "create", resourceType: "article", resourceId: article.id, details: { title: parsed.title } });
 
   revalidatePath(`/brand/${brand?.slug || brandId}/articles`);
   return article;
@@ -127,6 +130,8 @@ export async function updateArticle(
     changeSummary: `Updated`,
   });
 
+  await logAudit({ userId: session.user.id, brandId: existing?.brandId, action: "update", resourceType: "article", resourceId: articleId, details: { title: parsed.title } });
+
   revalidatePath(`/brand/${brandSlug}/articles`);
   revalidatePath(`/brand/${brandSlug}/articles/${articleId}`);
 }
@@ -136,6 +141,9 @@ export async function deleteArticle(articleId: string, brandSlug: string) {
   if (!session?.user) throw new Error("Unauthorized");
 
   await db.delete(articles).where(eq(articles.id, articleId));
+
+  await logAudit({ userId: session.user.id, action: "delete", resourceType: "article", resourceId: articleId });
+
   revalidatePath(`/brand/${brandSlug}/articles`);
 }
 
@@ -165,6 +173,8 @@ export async function createCategory(brandId: string, brandSlug: string, formDat
     parentId: parsed.parentId || null,
   });
 
+  await logAudit({ userId: session.user.id, brandId, action: "create", resourceType: "category", details: { name: parsed.name } });
+
   revalidatePath(`/brand/${brandSlug}/categories`);
 }
 
@@ -191,6 +201,8 @@ export async function updateCategory(
     })
     .where(eq(categories.id, categoryId));
 
+  await logAudit({ userId: session.user.id, action: "update", resourceType: "category", resourceId: categoryId, details: { name: parsed.name } });
+
   revalidatePath(`/brand/${brandSlug}/categories`);
 }
 
@@ -199,5 +211,8 @@ export async function deleteCategory(categoryId: string, brandSlug: string) {
   if (!session?.user) throw new Error("Unauthorized");
 
   await db.delete(categories).where(eq(categories.id, categoryId));
+
+  await logAudit({ userId: session.user.id, action: "delete", resourceType: "category", resourceId: categoryId });
+
   revalidatePath(`/brand/${brandSlug}/categories`);
 }

@@ -87,10 +87,10 @@ export function AdminSidebar() {
 
       <div className="p-2">
         {!collapsed && session?.user && (
-          <div className="px-3 py-2 mb-1">
+          <Link href="/profile" className="block px-3 py-2 mb-1 rounded-lg hover:bg-neutral-100 transition-colors">
             <p className="text-sm font-medium truncate">{session.user.name}</p>
             <p className="text-xs text-neutral-500 truncate">{session.user.email}</p>
-          </div>
+          </Link>
         )}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}

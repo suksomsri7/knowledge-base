@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createArticle, updateArticle } from "@/lib/actions/article-actions";
 import { Loader2 } from "lucide-react";
 
@@ -94,11 +95,32 @@ export function ArticleForm({
 
           <div className="space-y-2">
             <Label>Content</Label>
-            <TiptapEditor
-              content={content}
-              onChange={setContent}
-              placeholder="Write your article content..."
-            />
+            <Tabs defaultValue="edit">
+              <TabsList>
+                <TabsTrigger value="edit">Edit</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+              </TabsList>
+              <TabsContent value="edit">
+                <TiptapEditor
+                  content={content}
+                  onChange={setContent}
+                  placeholder="Write your article content..."
+                  brandId={brandId}
+                />
+              </TabsContent>
+              <TabsContent value="preview">
+                <div className="rounded-md border border-neutral-200 min-h-[400px] p-6">
+                  {content ? (
+                    <article
+                      className="prose prose-neutral max-w-none prose-headings:text-neutral-900 prose-a:text-neutral-900 prose-code:bg-neutral-100 prose-code:px-1 prose-code:rounded prose-pre:bg-neutral-900 prose-pre:text-neutral-100"
+                      dangerouslySetInnerHTML={{ __html: content }}
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No content to preview</p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
             <input type="hidden" name="content" value={content} />
           </div>
 

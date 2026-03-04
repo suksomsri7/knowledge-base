@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { logAudit } from "@/lib/actions/audit-actions";
 
 const createUserSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -45,6 +46,8 @@ export async function createUser(formData: FormData) {
     })
     .returning();
 
+  await logAudit({ userId: session.user.id, action: "create", resourceType: "user", resourceId: user.id, details: { email: parsed.email } });
+
   revalidatePath("/admin/users");
   return user;
 }
@@ -72,6 +75,9 @@ export async function updateUser(userId: string, formData: FormData) {
   }
 
   await db.update(users).set(updateData).where(eq(users.id, userId));
+
+  await logAudit({ userId: session.user.id, action: "update", resourceType: "user", resourceId: userId, details: { email: parsed.email } });
+
   revalidatePath("/admin/users");
 }
 
@@ -84,6 +90,8 @@ export async function toggleUserActive(userId: string, isActive: boolean) {
     .set({ isActive, updatedAt: new Date() })
     .where(eq(users.id, userId));
 
+  await logAudit({ userId: session.user.id, action: "toggle_active", resourceType: "user", resourceId: userId, details: { isActive } });
+
   revalidatePath("/admin/users");
 }
 
@@ -94,5 +102,8 @@ export async function deleteUser(userId: string) {
   if (userId === session.user.id) throw new Error("Cannot delete yourself");
 
   await db.delete(users).where(eq(users.id, userId));
+
+  await logAudit({ userId: session.user.id, action: "delete", resourceType: "user", resourceId: userId });
+
   revalidatePath("/admin/users");
 }

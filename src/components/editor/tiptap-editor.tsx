@@ -26,6 +26,7 @@ import {
   Redo2,
 } from "lucide-react";
 
+import { ImageUploadButton } from "./image-upload-button";
 import "./tiptap-editor.css";
 
 const lowlight = createLowlight(common);
@@ -34,6 +35,7 @@ interface TiptapEditorProps {
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  brandId?: string;
 }
 
 interface ToolbarButtonProps {
@@ -64,7 +66,7 @@ function Separator() {
 
 const ICON_SIZE = 18;
 
-export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorProps) {
+export function TiptapEditor({ content, onChange, placeholder, brandId }: TiptapEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -210,9 +212,18 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorPro
         >
           <Link2 size={ICON_SIZE} />
         </ToolbarButton>
-        <ToolbarButton onClick={addImage} title="Image">
-          <ImageIcon size={ICON_SIZE} />
-        </ToolbarButton>
+        {brandId ? (
+          <ImageUploadButton
+            brandId={brandId}
+            onImageUploaded={(url) => {
+              editor?.chain().focus().setImage({ src: url }).run();
+            }}
+          />
+        ) : (
+          <ToolbarButton onClick={addImage} title="Image">
+            <ImageIcon size={ICON_SIZE} />
+          </ToolbarButton>
+        )}
 
         <Separator />
 
