@@ -14,6 +14,7 @@ import {
   BookOpen,
   ChevronLeft,
   ArrowLeft,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -31,6 +32,7 @@ export function BrandSidebar({ brandName }: { brandName: string }) {
     { href: `/brand/${brandSlug}/articles`, label: "Articles", icon: FileText },
     { href: `/brand/${brandSlug}/categories`, label: "Categories", icon: FolderTree },
     { href: `/brand/${brandSlug}/members`, label: "Members", icon: Users },
+    { href: `/brand/${brandSlug}/roles`, label: "Roles", icon: Shield },
     { href: `/brand/${brandSlug}/settings`, label: "Settings", icon: Settings },
   ];
 

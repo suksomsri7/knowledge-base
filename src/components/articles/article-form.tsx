@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { TiptapEditor } from "@/components/editor/tiptap-editor";
+import "@/components/editor/tiptap-editor.css";
 import {
   Select,
   SelectContent,
@@ -47,6 +49,7 @@ export function ArticleForm({
 }: ArticleFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [content, setContent] = useState(article?.content ?? "");
   const isEditing = !!article;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -90,15 +93,13 @@ export function ArticleForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
-            <Textarea
-              id="content"
-              name="content"
-              rows={16}
-              defaultValue={article?.content ?? ""}
+            <Label>Content</Label>
+            <TiptapEditor
+              content={content}
+              onChange={setContent}
               placeholder="Write your article content..."
-              className="min-h-[300px] font-mono text-sm"
             />
+            <input type="hidden" name="content" value={content} />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

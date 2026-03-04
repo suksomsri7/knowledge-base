@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { MemberActions } from "./member-actions";
+import { AddMemberDialog } from "./add-member-dialog";
 
 export default async function MembersPage({
   params,
@@ -53,6 +54,7 @@ export default async function MembersPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Members</h1>
+        {isSuperAdmin && <AddMemberDialog brandId={brand.id} brandSlug={brandSlug} />}
       </div>
 
       {memberList.length === 0 ? (

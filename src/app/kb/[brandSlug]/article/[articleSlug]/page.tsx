@@ -99,14 +99,10 @@ export default async function ArticlePage({
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8">
-        <article className="prose prose-neutral max-w-none">
-          <div
-            className="whitespace-pre-wrap text-neutral-700 leading-relaxed"
-            style={{ whiteSpace: "pre-wrap" }}
-          >
-            {article.content}
-          </div>
-        </article>
+        <article
+          className="prose prose-neutral max-w-none prose-headings:text-neutral-900 prose-a:text-neutral-900 prose-code:bg-neutral-100 prose-code:px-1 prose-code:rounded prose-pre:bg-neutral-900 prose-pre:text-neutral-100 prose-blockquote:border-neutral-300 prose-img:rounded-lg"
+          dangerouslySetInnerHTML={{ __html: article.content }}
+        />
       </main>
 
       <footer className="border-t border-neutral-200 py-6 mt-10">

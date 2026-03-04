@@ -81,6 +81,18 @@ export default async function PublicKBPage({
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8 space-y-10">
+        <form action={`/kb/${brandSlug}/search`} method="GET" className="max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <input
+              name="q"
+              type="text"
+              placeholder="ค้นหาบทความ..."
+              className="w-full pl-10 pr-4 py-2.5 border border-neutral-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:border-neutral-400"
+            />
+          </div>
+        </form>
+
         {brandCategories.length > 0 && (
           <section>
             <h2 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">

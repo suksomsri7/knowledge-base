@@ -12,6 +12,7 @@ import {
   LogOut,
   BookOpen,
   ChevronLeft,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -21,6 +22,7 @@ const adminLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/brands", label: "Brands", icon: Building2 },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/audit", label: "Audit Log", icon: ScrollText },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
