@@ -10,14 +10,14 @@ import bcrypt from "bcryptjs";
 import { logAudit } from "@/lib/actions/audit-actions";
 
 const createUserSchema = z.object({
-  email: z.string().email("Invalid email"),
+  username: z.string().min(1, "Username is required").max(100),
   displayName: z.string().min(1, "Name is required").max(100),
   password: z.string().min(6, "Password must be at least 6 characters"),
   isSuperAdmin: z.boolean().optional(),
 });
 
 const updateUserSchema = z.object({
-  email: z.string().email("Invalid email"),
+  username: z.string().min(1, "Username is required").max(100),
   displayName: z.string().min(1, "Name is required").max(100),
   password: z.string().optional(),
   isSuperAdmin: z.boolean().optional(),
@@ -28,7 +28,7 @@ export async function createUser(formData: FormData) {
   if (!session?.user?.isSuperAdmin) throw new Error("Unauthorized");
 
   const parsed = createUserSchema.parse({
-    email: formData.get("email"),
+    username: formData.get("username"),
     displayName: formData.get("displayName"),
     password: formData.get("password"),
     isSuperAdmin: formData.get("isSuperAdmin") === "true",
@@ -39,14 +39,14 @@ export async function createUser(formData: FormData) {
   const [user] = await db
     .insert(users)
     .values({
-      email: parsed.email.toLowerCase(),
+      username: parsed.username.toLowerCase(),
       displayName: parsed.displayName,
       passwordHash,
       isSuperAdmin: parsed.isSuperAdmin || false,
     })
     .returning();
 
-  await logAudit({ userId: session.user.id, action: "create", resourceType: "user", resourceId: user.id, details: { email: parsed.email } });
+  await logAudit({ userId: session.user.id, action: "create", resourceType: "user", resourceId: user.id, details: { username: parsed.username } });
 
   revalidatePath("/admin/users");
   return user;
@@ -57,14 +57,14 @@ export async function updateUser(userId: string, formData: FormData) {
   if (!session?.user?.isSuperAdmin) throw new Error("Unauthorized");
 
   const parsed = updateUserSchema.parse({
-    email: formData.get("email"),
+    username: formData.get("username"),
     displayName: formData.get("displayName"),
     password: formData.get("password") || undefined,
     isSuperAdmin: formData.get("isSuperAdmin") === "true",
   });
 
   const updateData: Record<string, unknown> = {
-    email: parsed.email.toLowerCase(),
+    username: parsed.username.toLowerCase(),
     displayName: parsed.displayName,
     isSuperAdmin: parsed.isSuperAdmin || false,
     updatedAt: new Date(),
@@ -76,7 +76,7 @@ export async function updateUser(userId: string, formData: FormData) {
 
   await db.update(users).set(updateData).where(eq(users.id, userId));
 
-  await logAudit({ userId: session.user.id, action: "update", resourceType: "user", resourceId: userId, details: { email: parsed.email } });
+  await logAudit({ userId: session.user.id, action: "update", resourceType: "user", resourceId: userId, details: { username: parsed.username } });
 
   revalidatePath("/admin/users");
 }

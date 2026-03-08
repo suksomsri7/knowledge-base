@@ -10,7 +10,6 @@ import bcrypt from "bcryptjs";
 
 const profileSchema = z.object({
   displayName: z.string().min(1).max(100),
-  email: z.string().email(),
 });
 
 const passwordSchema = z.object({
@@ -24,14 +23,12 @@ export async function updateProfile(formData: FormData) {
 
   const parsed = profileSchema.parse({
     displayName: formData.get("displayName"),
-    email: formData.get("email"),
   });
 
   await db
     .update(users)
     .set({
       displayName: parsed.displayName,
-      email: parsed.email.toLowerCase(),
       updatedAt: new Date(),
     })
     .where(eq(users.id, session.user.id));

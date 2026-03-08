@@ -20,7 +20,7 @@ import { Plus, Pencil, Loader2 } from "lucide-react";
 interface UserFormProps {
   user?: {
     id: string;
-    email: string;
+    username: string;
     displayName: string;
     isSuperAdmin: boolean;
   };
@@ -87,13 +87,13 @@ export function UserForm({ user }: UserFormProps) {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">อีเมล</Label>
+              <Label htmlFor="username">ชื่อผู้ใช้</Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                defaultValue={user?.email ?? ""}
-                placeholder="email@example.com"
+                id="username"
+                name="username"
+                type="text"
+                defaultValue={user?.username ?? ""}
+                placeholder="username"
                 required
               />
             </div>

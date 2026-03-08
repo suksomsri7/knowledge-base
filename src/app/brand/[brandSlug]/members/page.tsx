@@ -42,7 +42,7 @@ export default async function MembersPage({
       isActive: brandMembers.isActive,
       joinedAt: brandMembers.joinedAt,
       userName: users.displayName,
-      userEmail: users.email,
+      userUsername: users.username,
       roleName: roles.name,
     })
     .from(brandMembers)
@@ -70,7 +70,7 @@ export default async function MembersPage({
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>Username</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
@@ -84,7 +84,7 @@ export default async function MembersPage({
                       {member.userName ?? "—"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {member.userEmail ?? "—"}
+                      {member.userUsername ?? "—"}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">

@@ -13,7 +13,7 @@ export async function GET() {
   const [user] = await db
     .select({
       id: users.id,
-      email: users.email,
+      username: users.username,
       displayName: users.displayName,
       isSuperAdmin: users.isSuperAdmin,
       createdAt: users.createdAt,

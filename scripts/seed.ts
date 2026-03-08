@@ -10,17 +10,17 @@ const db = drizzle(neonSql);
 async function seed() {
   console.log("Seeding database...");
 
-  const passwordHash = await bcrypt.hash("admin123", 12);
+  const passwordHash = await bcrypt.hash("@Superadmin252322", 12);
 
   await db.execute(
-    sql`INSERT INTO users (email, password_hash, display_name, is_super_admin, is_active)
-        VALUES (${`admin@admin.com`}, ${passwordHash}, ${"Super Admin"}, ${true}, ${true})
-        ON CONFLICT (email) DO NOTHING`
+    sql`INSERT INTO users (username, password_hash, display_name, is_super_admin, is_active)
+        VALUES (${`superadmin`}, ${passwordHash}, ${"Super Admin"}, ${true}, ${true})
+        ON CONFLICT (username) DO NOTHING`
   );
 
   console.log("Super Admin created:");
-  console.log("  Email: admin@admin.com");
-  console.log("  Password: admin123");
+  console.log("  Username: superadmin");
+  console.log("  Password: @Superadmin252322");
   console.log("");
   console.log("Seed complete!");
 }

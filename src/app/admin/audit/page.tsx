@@ -23,7 +23,7 @@ export default async function AuditLogPage() {
       details: auditLogs.details,
       createdAt: auditLogs.createdAt,
       userName: users.displayName,
-      userEmail: users.email,
+      userUsername: users.username,
     })
     .from(auditLogs)
     .leftJoin(users, eq(auditLogs.userId, users.id))
@@ -78,7 +78,7 @@ export default async function AuditLogPage() {
                       {log.userName ?? "—"}
                     </div>
                     <div className="text-xs text-neutral-400">
-                      {log.userEmail ?? ""}
+                      {log.userUsername ?? ""}
                     </div>
                   </TableCell>
                   <TableCell>

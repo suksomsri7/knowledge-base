@@ -13,6 +13,7 @@ import {
   BookOpen,
   ChevronLeft,
   ScrollText,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +21,7 @@ import { useState } from "react";
 
 const adminLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/brands", label: "จัดการ KB", icon: FileText },
   { href: "/admin/brands", label: "Brands", icon: Building2 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/audit", label: "Audit Log", icon: ScrollText },
@@ -89,7 +91,7 @@ export function AdminSidebar() {
         {!collapsed && session?.user && (
           <Link href="/profile" className="block px-3 py-2 mb-1 rounded-lg hover:bg-neutral-100 transition-colors">
             <p className="text-sm font-medium truncate">{session.user.name}</p>
-            <p className="text-xs text-neutral-500 truncate">{session.user.email}</p>
+            <p className="text-xs text-neutral-500 truncate">@{session.user.email}</p>
           </Link>
         )}
         <button

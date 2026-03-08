@@ -79,7 +79,7 @@ export function MobileHeader({
                   <div className="min-w-0">
                     <p className="font-medium truncate">{session.user.name}</p>
                     <p className="text-xs text-neutral-500 truncate">
-                      {session.user.email}
+                      @{session.user.email}
                     </p>
                   </div>
                 </Link>

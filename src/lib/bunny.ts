@@ -3,10 +3,10 @@ export async function uploadToBunny(
   fileName: string,
   path: string
 ): Promise<string> {
-  const storageZone = process.env.BUNNY_STORAGE_ZONE!;
-  const apiKey = process.env.BUNNY_API_KEY!;
-  const endpoint = process.env.BUNNY_STORAGE_ENDPOINT!;
-  const cdnUrl = process.env.BUNNY_CDN_URL!;
+  const storageZone = process.env.BUNNY_STORAGE_ZONE!.trim();
+  const apiKey = process.env.BUNNY_API_KEY!.trim();
+  const endpoint = process.env.BUNNY_STORAGE_ENDPOINT!.trim();
+  const cdnUrl = process.env.BUNNY_CDN_URL!.trim();
 
   const uploadUrl = `${endpoint}/${storageZone}/${path}/${fileName}`;
 
@@ -27,9 +27,9 @@ export async function uploadToBunny(
 }
 
 export async function deleteFromBunny(path: string): Promise<void> {
-  const storageZone = process.env.BUNNY_STORAGE_ZONE!;
-  const apiKey = process.env.BUNNY_API_KEY!;
-  const endpoint = process.env.BUNNY_STORAGE_ENDPOINT!;
+  const storageZone = process.env.BUNNY_STORAGE_ZONE!.trim();
+  const apiKey = process.env.BUNNY_API_KEY!.trim();
+  const endpoint = process.env.BUNNY_STORAGE_ENDPOINT!.trim();
 
   await fetch(`${endpoint}/${storageZone}/${path}`, {
     method: "DELETE",

@@ -19,7 +19,7 @@ import { ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface UserData {
   id: string;
-  email: string;
+  username: string;
   displayName: string;
   isSuperAdmin: boolean;
   createdAt: string;
@@ -57,7 +57,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState<{
     type: "success" | "error";
@@ -81,7 +80,6 @@ export default function ProfilePage() {
         const data = await res.json();
         setUser(data);
         setDisplayName(data.displayName);
-        setEmail(data.email);
       } catch {
         setProfileMessage({ type: "error", text: "Failed to load profile" });
       } finally {
@@ -99,7 +97,6 @@ export default function ProfilePage() {
     try {
       const formData = new FormData();
       formData.set("displayName", displayName);
-      formData.set("email", email);
       await updateProfile(formData);
       setProfileMessage({ type: "success", text: "Profile updated" });
     } catch (err) {
@@ -170,12 +167,18 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Profile Information</CardTitle>
-            <CardDescription>Update your display name and email</CardDescription>
+            <CardDescription>Update your display name</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleProfileSubmit} className="space-y-4">
               {profileMessage && (
                 <Alert variant={profileMessage.type} message={profileMessage.text} />
+              )}
+              {user && (
+                <div className="space-y-2">
+                  <Label>ชื่อผู้ใช้</Label>
+                  <Input value={user.username} disabled />
+                </div>
               )}
               <div className="space-y-2">
                 <Label htmlFor="displayName">Display Name</Label>
@@ -183,16 +186,6 @@ export default function ProfilePage() {
                   id="displayName"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>

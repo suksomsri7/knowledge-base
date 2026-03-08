@@ -1,3 +1,5 @@
+"use client";
+
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import {
@@ -6,10 +8,12 @@ import {
   Users,
   ScrollText,
   Settings,
+  FileText,
 } from "lucide-react";
 
 const adminLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/brands", label: "จัดการ KB", icon: FileText },
   { href: "/admin/brands", label: "Brands", icon: Building2 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/audit", label: "Audit Log", icon: ScrollText },

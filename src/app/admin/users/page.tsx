@@ -34,7 +34,7 @@ export default async function UsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>ชื่อ</TableHead>
-              <TableHead>อีเมล</TableHead>
+              <TableHead>ชื่อผู้ใช้</TableHead>
               <TableHead>บทบาท</TableHead>
               <TableHead>สถานะ</TableHead>
               <TableHead>เข้าสู่ระบบล่าสุด</TableHead>
@@ -58,7 +58,7 @@ export default async function UsersPage() {
                     {user.displayName}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {user.email}
+                    {user.username}
                   </TableCell>
                   <TableCell>
                     <Badge

@@ -7,7 +7,7 @@ export async function GET() {
   const allUsers = await db
     .select({
       id: users.id,
-      email: users.email,
+      username: users.username,
       displayName: users.displayName,
     })
     .from(users)

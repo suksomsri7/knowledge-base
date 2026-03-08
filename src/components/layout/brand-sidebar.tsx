@@ -101,7 +101,7 @@ export function BrandSidebar({ brandName }: { brandName: string }) {
         {!collapsed && session?.user && (
           <Link href="/profile" className="block px-3 py-2 rounded-lg hover:bg-neutral-100 transition-colors">
             <p className="text-sm font-medium truncate">{session.user.name}</p>
-            <p className="text-xs text-neutral-500 truncate">{session.user.email}</p>
+            <p className="text-xs text-neutral-500 truncate">@{session.user.email}</p>
           </Link>
         )}
         <button

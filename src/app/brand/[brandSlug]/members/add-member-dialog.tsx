@@ -23,7 +23,7 @@ import { addMemberToBrand } from "@/lib/actions/brand-actions";
 
 interface User {
   id: string;
-  email: string;
+  username: string;
   displayName: string;
 }
 
@@ -97,7 +97,7 @@ export function AddMemberDialog({ brandId, brandSlug }: AddMemberDialogProps) {
               <SelectContent>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
-                    {user.displayName} ({user.email})
+                    {user.displayName} ({user.username})
                   </SelectItem>
                 ))}
               </SelectContent>

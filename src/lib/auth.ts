@@ -6,8 +6,13 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+// Trim env vars that may contain \r\n from Vercel CLI on Windows
+// Must be here (not only in instrumentation.ts) because middleware runs in Edge runtime
+if (process.env.AUTH_SECRET) process.env.AUTH_SECRET = process.env.AUTH_SECRET.trim();
+if (process.env.NEXTAUTH_URL) process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL.trim();
+
 const loginSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(1),
   password: z.string().min(1),
 });
 
@@ -15,19 +20,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const { email, password } = parsed.data;
+        const { username, password } = parsed.data;
 
         const [user] = await db
           .select()
           .from(users)
-          .where(eq(users.email, email.toLowerCase()))
+          .where(eq(users.username, username.toLowerCase()))
           .limit(1);
 
         if (!user || !user.isActive) return null;
@@ -42,7 +47,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         return {
           id: user.id,
-          email: user.email,
+          email: user.username,
           name: user.displayName,
           isSuperAdmin: user.isSuperAdmin,
         };

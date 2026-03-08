@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { BrandForm } from "./brand-form";
 import { BrandActions } from "./brand-actions-menu";
+import Link from "next/link";
 
 export default async function BrandsPage() {
   const allBrands = await db.select().from(brands).orderBy(brands.createdAt);
@@ -67,7 +68,11 @@ export default async function BrandsPage() {
             ) : (
               allBrands.map((brand) => (
                 <TableRow key={brand.id}>
-                  <TableCell className="font-medium">{brand.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/brand/${brand.slug}`} className="hover:underline">
+                      {brand.name}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {brand.slug}
                   </TableCell>
