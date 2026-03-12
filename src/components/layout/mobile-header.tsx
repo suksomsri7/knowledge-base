@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Menu, BookOpen, LogOut, User } from "lucide-react";
@@ -38,6 +38,7 @@ export function MobileHeader({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
+            <SheetTitle className="sr-only">{title}</SheetTitle>
             <div className="p-4 flex items-center gap-3">
               <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-white" />

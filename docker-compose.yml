@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      AUTH_SECRET: ${AUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      BUNNY_STORAGE_ZONE: ${BUNNY_STORAGE_ZONE}
+      BUNNY_API_KEY: ${BUNNY_API_KEY}
+      BUNNY_STORAGE_ENDPOINT: ${BUNNY_STORAGE_ENDPOINT:-https://storage.bunnycdn.com}
+      BUNNY_CDN_URL: ${BUNNY_CDN_URL}

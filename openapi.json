@@ -1,0 +1,574 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Knowledge Base API",
+    "version": "1.0.0",
+    "description": "REST API สำหรับจัดการ Knowledge Base - ใช้ x-api-key header สำหรับ authentication"
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Local" }
+  ],
+  "security": [{ "ApiKeyAuth": [] }],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "KnowledgeItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string", "enum": ["faq", "info", "procedure"] },
+          "question": { "type": "string" },
+          "answer": { "type": "string" },
+          "keywords": { "type": "array", "items": { "type": "string" } },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "isActive": { "type": "boolean" },
+          "categoryId": { "type": "string", "format": "uuid", "nullable": true },
+          "categoryName": { "type": "string", "nullable": true },
+          "source": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "sortOrder": { "type": "integer" },
+          "itemCount": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Flow": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "triggerKeywords": { "type": "array", "items": { "type": "string" } },
+          "priority": { "type": "integer" },
+          "isActive": { "type": "boolean" },
+          "stepsCount": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "FlowStep": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "stepOrder": { "type": "integer" },
+          "type": { "type": "string", "enum": ["message", "options", "input", "end"] },
+          "message": { "type": "string" },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": { "type": "string" },
+                "keywords": { "type": "array", "items": { "type": "string" } },
+                "nextStepId": { "type": "string", "format": "uuid", "nullable": true }
+              }
+            }
+          },
+          "nextStepId": { "type": "string", "format": "uuid", "nullable": true },
+          "isFinal": { "type": "boolean" }
+        }
+      },
+      "Escalation": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "question": { "type": "string" },
+          "customerContext": { "type": "string", "nullable": true },
+          "aiAttemptedAnswer": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "resolved", "dismissed"] },
+          "priority": { "type": "string", "enum": ["low", "normal", "high"] },
+          "categoryId": { "type": "string", "format": "uuid", "nullable": true },
+          "categoryName": { "type": "string", "nullable": true },
+          "assignedTo": { "type": "string", "format": "uuid", "nullable": true },
+          "assigneeName": { "type": "string", "nullable": true },
+          "resolutionType": { "type": "string", "nullable": true },
+          "answer": { "type": "string", "nullable": true },
+          "adminNotes": { "type": "string", "nullable": true },
+          "resolvedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "sessionId": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "totalPages": { "type": "integer" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "details": {}
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/kb/search": {
+      "get": {
+        "summary": "ค้นหา Knowledge และ Flows",
+        "operationId": "searchKnowledge",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "คำค้นหา" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 3, "maximum": 10 }, "description": "จำนวนผลลัพธ์" }
+        ],
+        "responses": {
+          "200": { "description": "Search results with recommendation" }
+        }
+      }
+    },
+    "/api/v1/kb/knowledge": {
+      "get": {
+        "summary": "รายการ Knowledge Items",
+        "operationId": "listKnowledge",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "category_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["faq", "info", "procedure"] } },
+          { "name": "active_only", "in": "query", "schema": { "type": "boolean", "default": true } }
+        ],
+        "responses": {
+          "200": { "description": "List of knowledge items with pagination" }
+        }
+      },
+      "post": {
+        "summary": "สร้าง Knowledge Item ใหม่",
+        "operationId": "createKnowledge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["question", "answer"],
+                "properties": {
+                  "question": { "type": "string", "maxLength": 500 },
+                  "answer": { "type": "string" },
+                  "type": { "type": "string", "enum": ["faq", "info", "procedure"], "default": "faq" },
+                  "categoryId": { "type": "string", "format": "uuid", "nullable": true },
+                  "keywords": { "type": "array", "items": { "type": "string" }, "default": [] },
+                  "tags": { "type": "array", "items": { "type": "string" }, "default": [] },
+                  "isActive": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created knowledge item" }
+        }
+      }
+    },
+    "/api/v1/kb/knowledge/{id}": {
+      "get": {
+        "summary": "ดึง Knowledge Item ตาม ID",
+        "operationId": "getKnowledge",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Knowledge item" } }
+      },
+      "put": {
+        "summary": "แก้ไข Knowledge Item",
+        "operationId": "updateKnowledge",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question": { "type": "string", "maxLength": 500 },
+                  "answer": { "type": "string" },
+                  "type": { "type": "string", "enum": ["faq", "info", "procedure"] },
+                  "categoryId": { "type": "string", "format": "uuid", "nullable": true },
+                  "keywords": { "type": "array", "items": { "type": "string" } },
+                  "tags": { "type": "array", "items": { "type": "string" } },
+                  "isActive": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated knowledge item" } }
+      },
+      "delete": {
+        "summary": "ลบ Knowledge Item",
+        "operationId": "deleteKnowledge",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/v1/kb/knowledge/{id}/toggle": {
+      "patch": {
+        "summary": "เปิด/ปิดใช้งาน Knowledge Item",
+        "operationId": "toggleKnowledge",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["isActive"],
+                "properties": { "isActive": { "type": "boolean" } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Toggled" } }
+      }
+    },
+    "/api/v1/kb/categories": {
+      "get": {
+        "summary": "รายการ Categories",
+        "operationId": "listCategories",
+        "responses": { "200": { "description": "List of categories" } }
+      },
+      "post": {
+        "summary": "สร้าง Category ใหม่",
+        "operationId": "createCategory",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "maxLength": 100 },
+                  "description": { "type": "string", "nullable": true },
+                  "sortOrder": { "type": "integer", "default": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created category" } }
+      }
+    },
+    "/api/v1/kb/categories/{id}": {
+      "get": {
+        "summary": "ดึง Category ตาม ID",
+        "operationId": "getCategory",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Category" } }
+      },
+      "put": {
+        "summary": "แก้ไข Category",
+        "operationId": "updateCategory",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "maxLength": 100 },
+                  "description": { "type": "string", "nullable": true },
+                  "sortOrder": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated category" } }
+      },
+      "delete": {
+        "summary": "ลบ Category",
+        "operationId": "deleteCategory",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/v1/kb/flows": {
+      "get": {
+        "summary": "รายการ Flows",
+        "operationId": "listFlows",
+        "parameters": [
+          { "name": "active_only", "in": "query", "schema": { "type": "boolean", "default": true } }
+        ],
+        "responses": { "200": { "description": "List of flows" } }
+      },
+      "post": {
+        "summary": "สร้าง Flow ใหม่",
+        "operationId": "createFlow",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "maxLength": 100 },
+                  "description": { "type": "string", "nullable": true },
+                  "triggerKeywords": { "type": "array", "items": { "type": "string" }, "default": [] },
+                  "priority": { "type": "integer", "default": 0 },
+                  "isActive": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created flow" } }
+      }
+    },
+    "/api/v1/kb/flows/{id}": {
+      "get": {
+        "summary": "ดึง Flow พร้อม Steps",
+        "operationId": "getFlow",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Flow with steps" } }
+      },
+      "put": {
+        "summary": "แก้ไข Flow",
+        "operationId": "updateFlow",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string", "nullable": true },
+                  "triggerKeywords": { "type": "array", "items": { "type": "string" } },
+                  "priority": { "type": "integer" },
+                  "isActive": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated flow" } }
+      },
+      "delete": {
+        "summary": "ลบ Flow พร้อม Steps",
+        "operationId": "deleteFlow",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/v1/kb/flows/{id}/steps": {
+      "post": {
+        "summary": "เพิ่ม Step ใน Flow",
+        "operationId": "createFlowStep",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "message"],
+                "properties": {
+                  "type": { "type": "string", "enum": ["message", "options", "input", "end"] },
+                  "message": { "type": "string" },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["label"],
+                      "properties": {
+                        "label": { "type": "string" },
+                        "keywords": { "type": "array", "items": { "type": "string" } },
+                        "nextStepId": { "type": "string", "format": "uuid", "nullable": true }
+                      }
+                    }
+                  },
+                  "nextStepId": { "type": "string", "format": "uuid", "nullable": true },
+                  "isFinal": { "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created step" } }
+      }
+    },
+    "/api/v1/kb/flows/{id}/steps/{stepId}": {
+      "put": {
+        "summary": "แก้ไข Flow Step",
+        "operationId": "updateFlowStep",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "stepId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string", "enum": ["message", "options", "input", "end"] },
+                  "message": { "type": "string" },
+                  "options": { "type": "array" },
+                  "nextStepId": { "type": "string", "format": "uuid", "nullable": true },
+                  "isFinal": { "type": "boolean" },
+                  "stepOrder": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated step" } }
+      },
+      "delete": {
+        "summary": "ลบ Flow Step",
+        "operationId": "deleteFlowStep",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "stepId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/v1/kb/flow/step/{stepId}": {
+      "get": {
+        "summary": "ดึง Step เดียว (navigate flow)",
+        "operationId": "getFlowStep",
+        "parameters": [
+          { "name": "stepId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Step detail" } }
+      }
+    },
+    "/api/v1/kb/escalate": {
+      "post": {
+        "summary": "สร้าง Escalation ใหม่",
+        "operationId": "createEscalation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["question"],
+                "properties": {
+                  "question": { "type": "string" },
+                  "customerContext": { "type": "string" },
+                  "aiAttemptedAnswer": { "type": "string" },
+                  "priority": { "type": "string", "enum": ["low", "normal", "high"], "default": "normal" },
+                  "sessionId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Escalation created" } }
+      }
+    },
+    "/api/v1/kb/escalations": {
+      "get": {
+        "summary": "รายการ Escalations",
+        "operationId": "listEscalations",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "in_progress", "resolved", "dismissed"] } },
+          { "name": "priority", "in": "query", "schema": { "type": "string", "enum": ["low", "normal", "high"] } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } }
+        ],
+        "responses": { "200": { "description": "List of escalations" } }
+      }
+    },
+    "/api/v1/kb/escalations/{id}": {
+      "get": {
+        "summary": "ดึง Escalation ตาม ID",
+        "operationId": "getEscalation",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Escalation" } }
+      }
+    },
+    "/api/v1/kb/escalations/{id}/resolve": {
+      "patch": {
+        "summary": "Resolve Escalation (เพิ่ม KB อัตโนมัติถ้า added_to_kb)",
+        "operationId": "resolveEscalation",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["answer", "resolutionType"],
+                "properties": {
+                  "answer": { "type": "string" },
+                  "resolutionType": { "type": "string", "enum": ["answered", "added_to_kb", "redirected", "not_relevant"] },
+                  "adminNotes": { "type": "string", "nullable": true },
+                  "categoryId": { "type": "string", "format": "uuid", "nullable": true },
+                  "keywords": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Resolved" } }
+      }
+    },
+    "/api/v1/kb/escalations/{id}/dismiss": {
+      "patch": {
+        "summary": "Dismiss Escalation",
+        "operationId": "dismissEscalation",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Dismissed" } }
+      }
+    },
+    "/api/v1/kb/export": {
+      "get": {
+        "summary": "Export ข้อมูลทั้งหมด",
+        "operationId": "exportData",
+        "parameters": [
+          { "name": "updated_after", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "ISO date - เฉพาะที่อัปเดตหลังจากนี้" }
+        ],
+        "responses": { "200": { "description": "Exported data" } }
+      }
+    }
+  }
+}

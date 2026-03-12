@@ -1,16 +1,16 @@
 export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/db";
-import { brands, users, articles } from "@/lib/db/schema";
+import { brands, users, agents } from "@/lib/db/schema";
 import { count } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, FileText } from "lucide-react";
+import { Building2, Users, Bot } from "lucide-react";
 
 export default async function AdminDashboard() {
-  const [[brandCount], [userCount], [articleCount]] = await Promise.all([
+  const [[brandCount], [userCount], [agentCount]] = await Promise.all([
     db.select({ value: count() }).from(brands),
     db.select({ value: count() }).from(users),
-    db.select({ value: count() }).from(articles),
+    db.select({ value: count() }).from(agents),
   ]);
 
   const stats = [
@@ -25,9 +25,9 @@ export default async function AdminDashboard() {
       icon: Users,
     },
     {
-      title: "บทความทั้งหมด",
-      value: articleCount.value,
-      icon: FileText,
+      title: "Agents ทั้งหมด",
+      value: agentCount.value,
+      icon: Bot,
     },
   ];
 

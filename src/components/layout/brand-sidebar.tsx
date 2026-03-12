@@ -6,8 +6,7 @@ import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  FileText,
-  FolderTree,
+  Bot,
   Users,
   Settings,
   LogOut,
@@ -29,8 +28,7 @@ export function BrandSidebar({ brandName }: { brandName: string }) {
 
   const brandLinks = [
     { href: `/brand/${brandSlug}`, label: "Dashboard", icon: LayoutDashboard },
-    { href: `/brand/${brandSlug}/articles`, label: "Articles", icon: FileText },
-    { href: `/brand/${brandSlug}/categories`, label: "Categories", icon: FolderTree },
+    { href: `/brand/${brandSlug}/agents`, label: "Agents", icon: Bot },
     { href: `/brand/${brandSlug}/members`, label: "Members", icon: Users },
     { href: `/brand/${brandSlug}/roles`, label: "Roles", icon: Shield },
     { href: `/brand/${brandSlug}/settings`, label: "Settings", icon: Settings },

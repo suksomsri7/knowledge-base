@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.gitignore
+.env*
+!.env.example
+*.md
+.vercel
+.cursor
+uploads
+docker-compose.yml
