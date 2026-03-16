@@ -98,7 +98,7 @@ function calculateConfidence(query: string, item: {
   dbg.ngramSimilarity = Math.round(sim * 1000) / 1000;
   // #endregion
 
-  if (sim >= 0.7) return { score: Math.round(60 + sim * 35), _debug: { ...dbg, matchType: 'ngram_high' } };
+  if (sim >= 0.65) return { score: Math.round(60 + sim * 35), _debug: { ...dbg, matchType: 'ngram_high' } };
 
   const queryWords = q.split(/\s+/).filter((w) => w.length > 1);
   const questionWords = question.split(/\s+/).filter((w) => w.length > 1);
