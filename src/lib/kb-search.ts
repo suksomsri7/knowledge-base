@@ -32,6 +32,9 @@ interface SearchResult {
   keywords: string[] | null;
   tags: string[] | null;
   confidence: number;
+  // #region agent log
+  _debug?: Record<string, unknown>;
+  // #endregion
 }
 
 interface FlowMatch {
@@ -52,37 +55,59 @@ function calculateConfidence(query: string, item: {
   question: string;
   answer: string;
   keywords: string[] | null;
-}): number {
+}): { score: number; _debug: Record<string, unknown> } {
   const q = query.toLowerCase().trim();
   const question = item.question.toLowerCase();
   const answer = item.answer.toLowerCase();
   const keywords = (item.keywords ?? []).map((k) => k.toLowerCase());
 
-  if (question === q) return 98;
-  if (question.includes(q) || q.includes(question)) return 85;
+  // #region agent log
+  const dbg: Record<string, unknown> = {
+    queryProcessed: q,
+    questionFromDB: question,
+    qLength: q.length,
+    questionLength: question.length,
+    exactMatch: question === q,
+    qIncludesQuestion: q.includes(question),
+    questionIncludesQ: question.includes(q),
+  };
+  // #endregion
+
+  if (question === q) return { score: 98, _debug: { ...dbg, matchType: 'exact' } };
+  if (question.includes(q) || q.includes(question)) return { score: 85, _debug: { ...dbg, matchType: 'substring' } };
 
   const queryWords = q.split(/\s+/).filter((w) => w.length > 1);
-  if (queryWords.length === 0) return 0;
+  if (queryWords.length === 0) return { score: 0, _debug: { ...dbg, matchType: 'no_words' } };
 
   const questionWordMatches = queryWords.filter((w) => question.includes(w)).length;
   const questionRatio = questionWordMatches / queryWords.length;
-  if (questionRatio >= 0.8) return 80;
-  if (questionRatio >= 0.5) return 65;
+
+  // #region agent log
+  dbg.queryWords = queryWords;
+  dbg.queryWordsCount = queryWords.length;
+  dbg.questionWordMatches = questionWordMatches;
+  dbg.questionRatio = questionRatio;
+  dbg.matchedWords = queryWords.filter((w: string) => question.includes(w));
+  dbg.unmatchedWords = queryWords.filter((w: string) => !question.includes(w));
+  // #endregion
+
+  if (questionRatio >= 0.8) return { score: 80, _debug: { ...dbg, matchType: 'word_80pct' } };
+  if (questionRatio >= 0.5) return { score: 65, _debug: { ...dbg, matchType: 'word_50pct' } };
 
   const keywordMatches = queryWords.filter((w) =>
     keywords.some((kw) => kw.includes(w) || w.includes(kw))
   ).length;
   const keywordRatio = keywordMatches / queryWords.length;
-  if (keywordRatio >= 0.5) return 55;
+  if (keywordRatio >= 0.5) return { score: 55, _debug: { ...dbg, matchType: 'keyword_50pct', keywordRatio } };
 
   const answerWordMatches = queryWords.filter((w) => answer.includes(w)).length;
   const answerRatio = answerWordMatches / queryWords.length;
-  if (answerRatio >= 0.5) return 35;
+  if (answerRatio >= 0.5) return { score: 35, _debug: { ...dbg, matchType: 'answer_50pct', answerRatio } };
 
   const totalMatches = questionWordMatches + keywordMatches + answerWordMatches;
-  if (totalMatches > 0) return Math.min(30, totalMatches * 10);
+  if (totalMatches > 0) return { score: Math.min(30, totalMatches * 10), _debug: { ...dbg, matchType: 'partial', totalMatches } };
 
-  return 0;
+  return { score: 0, _debug: { ...dbg, matchType: 'none' } };
 }
 
 function calculateFlowConfidence(query: string, triggerKeywords: string[]): number {
@@ -128,16 +153,22 @@ export async function searchKnowledge(
     );
 
   const scored = items
-    .map((item) => ({
-      id: item.id,
-      type: item.type,
-      question: item.question,
-      answer: item.answer,
-      category: item.categoryName,
-      keywords: item.keywords,
-      tags: item.tags,
-      confidence: calculateConfidence(query, item),
-    }))
+    .map((item) => {
+      const { score, _debug } = calculateConfidence(query, item);
+      return {
+        id: item.id,
+        type: item.type,
+        question: item.question,
+        answer: item.answer,
+        category: item.categoryName,
+        keywords: item.keywords,
+        tags: item.tags,
+        confidence: score,
+        // #region agent log
+        _debug,
+        // #endregion
+      };
+    })
     .filter((item) => item.confidence > 0)
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, limit);
