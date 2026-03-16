@@ -51,6 +51,26 @@ interface FlowMatch {
   confidence?: number;
 }
 
+function getNgrams(text: string, n: number): Set<string> {
+  const grams = new Set<string>();
+  const clean = text.replace(/\s+/g, ' ').trim();
+  for (let i = 0; i <= clean.length - n; i++) {
+    grams.add(clean.substring(i, i + n));
+  }
+  return grams;
+}
+
+function ngramSimilarity(a: string, b: string, n: number = 3): number {
+  const gramsA = getNgrams(a, n);
+  const gramsB = getNgrams(b, n);
+  if (gramsA.size === 0 || gramsB.size === 0) return 0;
+  let intersection = 0;
+  for (const g of gramsA) {
+    if (gramsB.has(g)) intersection++;
+  }
+  return intersection / Math.max(gramsA.size, gramsB.size);
+}
+
 function calculateConfidence(query: string, item: {
   question: string;
   answer: string;
@@ -67,45 +87,65 @@ function calculateConfidence(query: string, item: {
     questionFromDB: question,
     qLength: q.length,
     questionLength: question.length,
-    exactMatch: question === q,
-    qIncludesQuestion: q.includes(question),
-    questionIncludesQ: question.includes(q),
   };
   // #endregion
 
   if (question === q) return { score: 98, _debug: { ...dbg, matchType: 'exact' } };
-  if (question.includes(q) || q.includes(question)) return { score: 85, _debug: { ...dbg, matchType: 'substring' } };
+  if (question.includes(q) || q.includes(question)) return { score: 90, _debug: { ...dbg, matchType: 'substring' } };
 
-  const queryWords = q.split(/\s+/).filter((w) => w.length > 1);
-  if (queryWords.length === 0) return { score: 0, _debug: { ...dbg, matchType: 'no_words' } };
-
-  const questionWordMatches = queryWords.filter((w) => question.includes(w)).length;
-  const questionRatio = questionWordMatches / queryWords.length;
-
+  const sim = ngramSimilarity(q, question);
   // #region agent log
-  dbg.queryWords = queryWords;
-  dbg.queryWordsCount = queryWords.length;
-  dbg.questionWordMatches = questionWordMatches;
-  dbg.questionRatio = questionRatio;
-  dbg.matchedWords = queryWords.filter((w: string) => question.includes(w));
-  dbg.unmatchedWords = queryWords.filter((w: string) => !question.includes(w));
+  dbg.ngramSimilarity = Math.round(sim * 1000) / 1000;
   // #endregion
 
-  if (questionRatio >= 0.8) return { score: 80, _debug: { ...dbg, matchType: 'word_80pct' } };
-  if (questionRatio >= 0.5) return { score: 65, _debug: { ...dbg, matchType: 'word_50pct' } };
+  if (sim >= 0.7) return { score: Math.round(60 + sim * 35), _debug: { ...dbg, matchType: 'ngram_high' } };
+
+  const queryWords = q.split(/\s+/).filter((w) => w.length > 1);
+  const questionWords = question.split(/\s+/).filter((w) => w.length > 1);
+
+  const allFragments = new Set<string>();
+  for (const w of queryWords) {
+    allFragments.add(w);
+    if (w.length > 6) {
+      for (let i = 0; i < w.length - 5; i++) {
+        allFragments.add(w.substring(i, i + 6));
+      }
+    }
+  }
+
+  let fragmentHits = 0;
+  for (const f of allFragments) {
+    if (question.includes(f)) fragmentHits++;
+  }
+  const fragmentRatio = allFragments.size > 0 ? fragmentHits / allFragments.size : 0;
+
+  // #region agent log
+  dbg.queryWordsCount = queryWords.length;
+  dbg.fragmentsCount = allFragments.size;
+  dbg.fragmentHits = fragmentHits;
+  dbg.fragmentRatio = Math.round(fragmentRatio * 1000) / 1000;
+  // #endregion
+
+  if (fragmentRatio >= 0.6) return { score: Math.round(50 + fragmentRatio * 30), _debug: { ...dbg, matchType: 'fragment_high' } };
+  if (fragmentRatio >= 0.3) return { score: Math.round(30 + fragmentRatio * 40), _debug: { ...dbg, matchType: 'fragment_mid' } };
 
   const keywordMatches = queryWords.filter((w) =>
     keywords.some((kw) => kw.includes(w) || w.includes(kw))
   ).length;
-  const keywordRatio = keywordMatches / queryWords.length;
-  if (keywordRatio >= 0.5) return { score: 55, _debug: { ...dbg, matchType: 'keyword_50pct', keywordRatio } };
+  const keywordFragments = queryWords.filter((w) =>
+    keywords.some((kw) => ngramSimilarity(w, kw) >= 0.5)
+  ).length;
+  const totalKeywordHits = Math.max(keywordMatches, keywordFragments);
+  const keywordRatio = queryWords.length > 0 ? totalKeywordHits / queryWords.length : 0;
+  if (keywordRatio >= 0.3) return { score: Math.round(40 + keywordRatio * 30), _debug: { ...dbg, matchType: 'keyword', keywordRatio: Math.round(keywordRatio * 1000) / 1000 } };
 
-  const answerWordMatches = queryWords.filter((w) => answer.includes(w)).length;
-  const answerRatio = answerWordMatches / queryWords.length;
-  if (answerRatio >= 0.5) return { score: 35, _debug: { ...dbg, matchType: 'answer_50pct', answerRatio } };
+  const answerSim = ngramSimilarity(q, answer);
+  if (answerSim >= 0.3) return { score: Math.round(20 + answerSim * 40), _debug: { ...dbg, matchType: 'answer_ngram', answerSim: Math.round(answerSim * 1000) / 1000 } };
 
-  const totalMatches = questionWordMatches + keywordMatches + answerWordMatches;
-  if (totalMatches > 0) return { score: Math.min(30, totalMatches * 10), _debug: { ...dbg, matchType: 'partial', totalMatches } };
+  if (fragmentHits > 0 || sim > 0.1) {
+    const baseScore = Math.max(fragmentHits * 5, Math.round(sim * 30));
+    return { score: Math.min(25, baseScore), _debug: { ...dbg, matchType: 'partial' } };
+  }
 
   return { score: 0, _debug: { ...dbg, matchType: 'none' } };
 }
