@@ -32,9 +32,6 @@ interface SearchResult {
   keywords: string[] | null;
   tags: string[] | null;
   confidence: number;
-  // #region agent log
-  _debug?: Record<string, unknown>;
-  // #endregion
 }
 
 interface FlowMatch {
@@ -75,33 +72,19 @@ function calculateConfidence(query: string, item: {
   question: string;
   answer: string;
   keywords: string[] | null;
-}): { score: number; _debug: Record<string, unknown> } {
+}): number {
   const q = query.toLowerCase().trim();
   const question = item.question.toLowerCase();
   const answer = item.answer.toLowerCase();
   const keywords = (item.keywords ?? []).map((k) => k.toLowerCase());
 
-  // #region agent log
-  const dbg: Record<string, unknown> = {
-    queryProcessed: q,
-    questionFromDB: question,
-    qLength: q.length,
-    questionLength: question.length,
-  };
-  // #endregion
-
-  if (question === q) return { score: 98, _debug: { ...dbg, matchType: 'exact' } };
-  if (question.includes(q) || q.includes(question)) return { score: 90, _debug: { ...dbg, matchType: 'substring' } };
+  if (question === q) return 98;
+  if (question.includes(q) || q.includes(question)) return 90;
 
   const sim = ngramSimilarity(q, question);
-  // #region agent log
-  dbg.ngramSimilarity = Math.round(sim * 1000) / 1000;
-  // #endregion
-
-  if (sim >= 0.65) return { score: Math.round(60 + sim * 35), _debug: { ...dbg, matchType: 'ngram_high' } };
+  if (sim >= 0.65) return Math.round(60 + sim * 35);
 
   const queryWords = q.split(/\s+/).filter((w) => w.length > 1);
-  const questionWords = question.split(/\s+/).filter((w) => w.length > 1);
 
   const allFragments = new Set<string>();
   for (const w of queryWords) {
@@ -119,15 +102,8 @@ function calculateConfidence(query: string, item: {
   }
   const fragmentRatio = allFragments.size > 0 ? fragmentHits / allFragments.size : 0;
 
-  // #region agent log
-  dbg.queryWordsCount = queryWords.length;
-  dbg.fragmentsCount = allFragments.size;
-  dbg.fragmentHits = fragmentHits;
-  dbg.fragmentRatio = Math.round(fragmentRatio * 1000) / 1000;
-  // #endregion
-
-  if (fragmentRatio >= 0.6) return { score: Math.round(50 + fragmentRatio * 30), _debug: { ...dbg, matchType: 'fragment_high' } };
-  if (fragmentRatio >= 0.3) return { score: Math.round(30 + fragmentRatio * 40), _debug: { ...dbg, matchType: 'fragment_mid' } };
+  if (fragmentRatio >= 0.6) return Math.round(50 + fragmentRatio * 30);
+  if (fragmentRatio >= 0.3) return Math.round(30 + fragmentRatio * 40);
 
   const keywordMatches = queryWords.filter((w) =>
     keywords.some((kw) => kw.includes(w) || w.includes(kw))
@@ -137,17 +113,16 @@ function calculateConfidence(query: string, item: {
   ).length;
   const totalKeywordHits = Math.max(keywordMatches, keywordFragments);
   const keywordRatio = queryWords.length > 0 ? totalKeywordHits / queryWords.length : 0;
-  if (keywordRatio >= 0.3) return { score: Math.round(40 + keywordRatio * 30), _debug: { ...dbg, matchType: 'keyword', keywordRatio: Math.round(keywordRatio * 1000) / 1000 } };
+  if (keywordRatio >= 0.3) return Math.round(40 + keywordRatio * 30);
 
   const answerSim = ngramSimilarity(q, answer);
-  if (answerSim >= 0.3) return { score: Math.round(20 + answerSim * 40), _debug: { ...dbg, matchType: 'answer_ngram', answerSim: Math.round(answerSim * 1000) / 1000 } };
+  if (answerSim >= 0.3) return Math.round(20 + answerSim * 40);
 
   if (fragmentHits > 0 || sim > 0.1) {
-    const baseScore = Math.max(fragmentHits * 5, Math.round(sim * 30));
-    return { score: Math.min(25, baseScore), _debug: { ...dbg, matchType: 'partial' } };
+    return Math.min(25, Math.max(fragmentHits * 5, Math.round(sim * 30)));
   }
 
-  return { score: 0, _debug: { ...dbg, matchType: 'none' } };
+  return 0;
 }
 
 function calculateFlowConfidence(query: string, triggerKeywords: string[]): number {
@@ -193,22 +168,16 @@ export async function searchKnowledge(
     );
 
   const scored = items
-    .map((item) => {
-      const { score, _debug } = calculateConfidence(query, item);
-      return {
-        id: item.id,
-        type: item.type,
-        question: item.question,
-        answer: item.answer,
-        category: item.categoryName,
-        keywords: item.keywords,
-        tags: item.tags,
-        confidence: score,
-        // #region agent log
-        _debug,
-        // #endregion
-      };
-    })
+    .map((item) => ({
+      id: item.id,
+      type: item.type,
+      question: item.question,
+      answer: item.answer,
+      category: item.categoryName,
+      keywords: item.keywords,
+      tags: item.tags,
+      confidence: calculateConfidence(query, item),
+    }))
     .filter((item) => item.confidence > 0)
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, limit);
